@@ -107,6 +107,7 @@ local drakolith = {113071, 113072, 113073}  -- IDs of Drakolith ores
 local banite = {113140, 113141, 113142} -- IDs of Banite ores
 local necrite = {113143, 113144, 113145} -- IDs of Necrite ores
 local runite = {113189, 113190} -- IDs of Runite ores
+local adamantite = {113053, 113054, 113055} -- IDs of Adamantite ores
 
 -- Define the function to shuffle a table
 local function shuffle(tbl)
@@ -306,7 +307,19 @@ local function RuniteWalk()
     API.RandomSleep2(2500, 3050, 12000)
 end
 
+--Define the function to teleport to Port Sarim
+local function PortSarimTeleport()
+    API.DoAction_Interface(0xffffffff,0xffffffff,1,1092,19,-1,3808)
+    API.WaitUntilMovingandAnimEnds()
+    API.RandomSleep2(2500, 3050, 12000)
+end
 
+--Define the function to walk to Adamantite rocks
+local function AddyWalk()
+    API.DoAction_Tile(WPOINT.new(2973,3235,0))
+    API.WaitUntilMovingandAnimEnds()
+    API.RandomSleep2(2500, 3050, 12000)
+end
 
 -- Main loop environment
 local scriptJustInitiated = true -- Initialize the variable to track script initiation
@@ -327,11 +340,17 @@ while(API.Read_LoopyLoop()) do
     if scriptJustInitiated then
         -- Perform initial setup based on mining level
         local currentLevel = API.XPLevelTable(API.GetSkillXP("MINING"))
-	if currentLevel >= 56 and currentLevel <= 67 then
-	    YanilleTeleport()
-	    YanilleBanker()
-	    BankItems()
-	    RuniteWalk()
+	    if currentLevel >= 49 and currentLevel <= 55 then
+	        GETeleport()
+	        GEBanker()
+	        BankItems()
+	        PortSarimTeleport()
+	        AddyWalk()
+        elseif currentLevel >= 56 and currentLevel <= 67 then
+	        YanilleTeleport()
+	        YanilleBanker()
+	        BankItems()
+	        RuniteWalk()
         elseif currentLevel >= 68 and currentLevel <= 76 then
             GETeleport()
             GEBanker()
@@ -358,7 +377,61 @@ while(API.Read_LoopyLoop()) do
     else
         -- Perform mining actions based on mining level
         local currentLevel = API.XPLevelTable(API.GetSkillXP("MINING"))
-        if currentLevel >= 56 and currentLevel <= 67 then
+        if currentLevel >= 49 and currentLevel <= 55 then
+            -- Adamantite Mining actions
+            if API.InvFull_() then
+                if UTILS.getAmountInOrebox(UTILS.ORES.ADAMANTITE) < 120 then
+                    FillOreBox()
+                else
+                    GETeleport()
+                    GEBanker()
+                    BankItems()
+                    PortSarimTeleport()
+                    AddyWalk()
+                end
+            else
+                if API.Invfreecount_() > 0 then
+                    print("idle check")
+                    if not API.IsPlayerAnimating_(player, 3) then
+                        API.RandomSleep2(1500, 6050, 2000)        
+                        if not API.IsPlayerAnimating_(player, 2) then
+                            print("idle so start mining...")
+                            -- Shuffle the ore IDs
+                            adamantite = shuffle(adamantite)
+                            -- Mine the first ore in the shuffled list
+                            MineRock(adamantite[1])
+                            -- Wait until the mining animation ends before proceeding
+                            API.WaitUntilMovingandAnimEnds()
+
+                            -- Check for sparkling rocks while mining is idle
+                            local foundSparkling = API.FindHl(0x3a, 0, adamantite, 50, { 7165, 7164 })
+                            if foundSparkling then
+                                print("Sparkle found")
+                                MineRock(foundSparkling)  -- Mine the sparkling rock
+                            end
+                        end
+                    end
+                else
+                    print(API.LocalPlayer_HoverProgress())
+                    while API.LocalPlayer_HoverProgress() <= 90 do
+                        print("no stamina..")
+                        print(API.LocalPlayer_HoverProgress())
+                        -- Try to find and mine a sparkling rock
+                        local foundSparkling = API.FindHl(0x3a, 0, adamantite, 50, { 7165, 7164 })
+                        if  foundSparkling then
+                            print("Sparkle found")
+                            MineRock(foundSparkling)  -- Mine the sparkling rock
+                            API.RandomSleep2(2500, 3050, 12000)
+                        else
+                            -- If no sparkling rock was found, mine the first ore in the shuffled list
+                            print("No Sparkle found")
+                            MineRock(adamantite[1])
+                            API.RandomSleep2(2500, 3050, 12000)
+                        end
+                    end
+                end
+            end
+        elseif currentLevel >= 56 and currentLevel <= 67 then
             -- Runite Mining actions
             if API.InvFull_() then
                 if UTILS.getAmountInOrebox(UTILS.ORES.RUNITE) < 120 then
@@ -580,6 +653,4 @@ while(API.Read_LoopyLoop()) do
             end
         end
     end
-
-    API.RandomSleep2(500, 3050, 12000)
 end
