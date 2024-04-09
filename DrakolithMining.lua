@@ -88,7 +88,6 @@ local function printProgressReport(final)
             ": " .. currentLevel .. " | XP/H: " .. formatNumber(xpPH) .. " | XP: " .. formatNumber(diffXp)
 end
 
-
 local function setupGUI()
     IGP = API.CreateIG_answer()
     IGP.box_start = FFPOINT.new(5, 5, 0)
@@ -104,7 +103,7 @@ end
 setupGUI()
 
 -- Variable modules
-local drakolith = {113071, 113072, 113073}  -- IDs of Drakolith rocks
+local drakolith = {113071, 113072, 113073}  -- IDs of Drakolith ores
 
 -- Define the function to shuffle a table
 local function shuffle(tbl)
@@ -186,7 +185,7 @@ local function EnterDungeon()
     API.WaitUntilMovingandAnimEnds()
     API.RandomSleep2(5000, 8050, 12000) -- Add sleep after climbing the rocks outside the dungeon
     print("Accessing mining dungeon...")
-    API.RandomSleep2(5000, 8050, 12000) -- Add sleep after climbing the rocks outside the dungeon
+    API.RandomSleep2(5000, 8050, 12000)
     API.DoAction_Object1(0x39, 0, {52860}, 50)
     API.WaitUntilMovingandAnimEnds()
     print("Returned to dungeon from banking.")
@@ -202,13 +201,9 @@ end
 -- Define the function to fill the ore box
 local function FillOreBox()
     print("Attempting to fill ore box...")
-    if UTILS.getAmountInOrebox(UTILS.ORES.DRAKOLITH) < 120 then
-        API.DoAction_Interface(0x24, 0xaef9, 1, 1473, 5, 0, 3808)
-        API.WaitUntilMovingandAnimEnds()
-        print("Successfully filled ore box.")
-    else
-        print("Ore box is already full.")
-    end
+    API.DoAction_Interface(0x24, 0xaef9, 1, 1473, 5, 0, 3808)
+    API.WaitUntilMovingandAnimEnds()
+    print("Successfully filled ore box.")
 end
 
 -- Define the function to mine rocks
@@ -217,29 +212,33 @@ local function MineRock(rockID)
     API.WaitUntilMovingandAnimEnds()
 end
 
-local function updateProgressReport()
-    while true do
-        printProgressReport()
-        API.RandomSleep2(1000, 1100, 1200)  -- Sleep for approximately 1 second before updating again
-    end
-end
-
--- Start the coroutine
-local progressCoroutine = coroutine.create(updateProgressReport)
-
 -- Main loop environment
+local scriptJustInitiated = true -- Initialize the variable to track script initiation
 API.Write_LoopyLoop(true)
 while(API.Read_LoopyLoop()) do
     drawGUI()
     idleCheck()
+    printProgressReport()
     API.DoRandomEvents()
 
+    -- Check if the script has just initiated
     if scriptJustInitiated then
-        VarrockTeleport()
-        WalkSome()
-        EnterDungeon()
-        scriptJustInitiated = false  -- Update scriptJustInitiated after the initial setup
+        -- Perform initial setup
+        local Cselect = API.ScriptDialogWindow2("Mining", {
+            "Drakolith Mining"
+        }, "Start", "Close").Name;
+
+        if "Drakolith Mining" == Cselect then
+            GETeleport()
+            Banker()
+            BankItems()
+            VarrockTeleport()
+            WalkSome()
+            EnterDungeon()
+            scriptJustInitiated = false  -- Update scriptJustInitiated after the initial setup
+        end
     else
+        -- Continue with the main routine
         if API.InvFull_() then
             if UTILS.getAmountInOrebox(UTILS.ORES.DRAKOLITH) < 120 then
                 FillOreBox()
@@ -296,7 +295,4 @@ while(API.Read_LoopyLoop()) do
     end
 
     API.RandomSleep2(500, 3050, 12000)
-
-    -- Resume the coroutine to update the progress report
-    coroutine.resume(progressCoroutine)
 end
