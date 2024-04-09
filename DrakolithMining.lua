@@ -321,12 +321,11 @@ local function AddyWalk()
     API.RandomSleep2(2500, 3050, 12000)
 end
 
--- Main loop environment
-local scriptJustInitiated = true -- Initialize the variable to track script initiation
+local scriptJustInitiated = true
 API.Write_LoopyLoop(true)
 local lastGuiUpdateTime = os.time()
+
 while(API.Read_LoopyLoop()) do
-    -- Update GUI every second
     if os.time() - lastGuiUpdateTime >= 1 then
         drawGUI()
         lastGuiUpdateTime = os.time()
@@ -336,21 +335,26 @@ while(API.Read_LoopyLoop()) do
     printProgressReport()
     API.DoRandomEvents()
 
-    -- Check if the script has just initiated
+    local currentLevel = API.XPLevelTable(API.GetSkillXP("MINING"))
+    
     if scriptJustInitiated then
-        -- Perform initial setup based on mining level
-        local currentLevel = API.XPLevelTable(API.GetSkillXP("MINING"))
-	    if currentLevel >= 49 and currentLevel <= 55 then
-	        GETeleport()
-	        GEBanker()
-	        BankItems()
-	        PortSarimTeleport()
-	        AddyWalk()
+        if currentLevel >= 37 and currentLevel <= 48 then
+            GETeleport()
+            GEBanker()
+            BankItems()
+            VarrockTeleport()
+            MithWalk()
+        elseif currentLevel >= 49 and currentLevel <= 55 then
+            GETeleport()
+            GEBanker()
+            BankItems()
+            PortSarimTeleport()
+            AddyWalk()
         elseif currentLevel >= 56 and currentLevel <= 67 then
-	        YanilleTeleport()
-	        YanilleBanker()
-	        BankItems()
-	        RuniteWalk()
+            YanilleTeleport()
+            YanilleBanker()
+            BankItems()
+            RuniteWalk()
         elseif currentLevel >= 68 and currentLevel <= 76 then
             GETeleport()
             GEBanker()
@@ -373,21 +377,18 @@ while(API.Read_LoopyLoop()) do
             SlashWeb()
             BaniteWalk()
         end
-        scriptJustInitiated = false  -- Update scriptJustInitiated after the initial setup
+        scriptJustInitiated = false
     else
-        -- Perform mining actions based on mining level
-        local currentLevel = API.XPLevelTable(API.GetSkillXP("MINING"))
-        if currentLevel >= 49 and currentLevel <= 55 then
-            -- Adamantite Mining actions
+        if currentLevel >= 37 and currentLevel <= 48 then
             if API.InvFull_() then
-                if UTILS.getAmountInOrebox(UTILS.ORES.ADAMANTITE) < 120 then
+                if UTILS.getAmountInOrebox(UTILS.ORES.MITHRIL) < 120 then
                     FillOreBox()
                 else
                     GETeleport()
                     GEBanker()
                     BankItems()
-                    PortSarimTeleport()
-                    AddyWalk()
+                    VarrockTeleport()
+                    MithWalk()
                 end
             else
                 if API.Invfreecount_() > 0 then
@@ -396,257 +397,279 @@ while(API.Read_LoopyLoop()) do
                         API.RandomSleep2(1500, 6050, 2000)        
                         if not API.IsPlayerAnimating_(player, 2) then
                             print("idle so start mining...")
-                            -- Shuffle the ore IDs
-                            adamantite = shuffle(adamantite)
-                            -- Mine the first ore in the shuffled list
-                            MineRock(adamantite[1])
-                            -- Wait until the mining animation ends before proceeding
+                            mithril = shuffle(mithril)
+                            MineRock(mithril[1])
                             API.WaitUntilMovingandAnimEnds()
 
-                            -- Check for sparkling rocks while mining is idle
+                            local foundSparkling = API.FindHl(0x3a, 0, mithril, 50, { 7165, 7164 })
+                            if foundSparkling then
+                                print("Sparkle found")
+                                MineRock(foundSparkling)
+                            end
+                        end
+                    end
+                else
+                    print(API.LocalPlayer_HoverProgress())
+                    while API.LocalPlayer_HoverProgress() <= 90 do
+                        print("no stamina..")
+                        print(API.LocalPlayer_HoverProgress())
+                        local foundSparkling = API.FindHl(0x3a, 0, mithril, 50, { 7165, 7164 })
+                        if foundSparkling then
+                            print("Sparkle found")
+                            MineRock(foundSparkling)
+                            API.RandomSleep2(2500, 3050, 12000)
+                        else
+                            print("No Sparkle found")
+                            MineRock(mithril[1])
+                            API.RandomSleep2(2500, 3050, 12000)
+                        end
+                    end
+                end
+            end
+        else
+            if currentLevel >= 49 and currentLevel <= 55 then
+                -- Adamantite Mining actions
+                if API.InvFull_() then
+                    if UTILS.getAmountInOrebox(UTILS.ORES.ADAMANTITE) < 120 then
+                        FillOreBox()
+                    else
+                        GETeleport()
+                        GEBanker()
+                        BankItems()
+                        PortSarimTeleport()
+                        AddyWalk()
+                    end
+                else
+                    if API.Invfreecount_() > 0 then
+                        print("idle check")
+                        if not API.IsPlayerAnimating_(player, 3) then
+                            API.RandomSleep2(1500, 6050, 2000)        
+                            if not API.IsPlayerAnimating_(player, 2) then
+                                print("idle so start mining...")
+                                adamantite = shuffle(adamantite)
+                                MineRock(adamantite[1])
+                                API.WaitUntilMovingandAnimEnds()
+
+                                local foundSparkling = API.FindHl(0x3a, 0, adamantite, 50, { 7165, 7164 })
+                                if foundSparkling then
+                                    print("Sparkle found")
+                                    MineRock(foundSparkling)
+                                end
+                            end
+                        end
+                    else
+                        print(API.LocalPlayer_HoverProgress())
+                        while API.LocalPlayer_HoverProgress() <= 90 do
+                            print("no stamina..")
+                            print(API.LocalPlayer_HoverProgress())
                             local foundSparkling = API.FindHl(0x3a, 0, adamantite, 50, { 7165, 7164 })
                             if foundSparkling then
                                 print("Sparkle found")
-                                MineRock(foundSparkling)  -- Mine the sparkling rock
+                                MineRock(foundSparkling)
+                                API.RandomSleep2(2500, 3050, 12000)
+                            else
+                                print("No Sparkle found")
+                                MineRock(adamantite[1])
+                                API.RandomSleep2(2500, 3050, 12000)
                             end
                         end
                     end
-                else
-                    print(API.LocalPlayer_HoverProgress())
-                    while API.LocalPlayer_HoverProgress() <= 90 do
-                        print("no stamina..")
-                        print(API.LocalPlayer_HoverProgress())
-                        -- Try to find and mine a sparkling rock
-                        local foundSparkling = API.FindHl(0x3a, 0, adamantite, 50, { 7165, 7164 })
-                        if  foundSparkling then
-                            print("Sparkle found")
-                            MineRock(foundSparkling)  -- Mine the sparkling rock
-                            API.RandomSleep2(2500, 3050, 12000)
-                        else
-                            -- If no sparkling rock was found, mine the first ore in the shuffled list
-                            print("No Sparkle found")
-                            MineRock(adamantite[1])
-                            API.RandomSleep2(2500, 3050, 12000)
-                        end
+                end
+            elseif currentLevel >= 56 and currentLevel <= 67 then
+                -- Runite Mining actions
+                if API.InvFull_() then
+                    if UTILS.getAmountInOrebox(UTILS.ORES.RUNITE) < 120 then
+                        FillOreBox()
+                    else
+                        YanilleTeleport()
+                        YanilleBanker()
+                        BankItems()
+                        RuniteWalk()
+                        DrakolithWalk()
+                        AlKharidDungeon()
                     end
-                end
-            end
-        elseif currentLevel >= 56 and currentLevel <= 67 then
-            -- Runite Mining actions
-            if API.InvFull_() then
-                if UTILS.getAmountInOrebox(UTILS.ORES.RUNITE) < 120 then
-                    FillOreBox()
                 else
-                    YanilleTeleport()
-                    YanilleBanker()
-                    BankItems()
-                    RuniteWalk()
-                    DrakolithWalk()
-                    AlKharidDungeon()
-                end
-            else
-                if API.Invfreecount_() > 0 then
-                    print("idle check")
-                    if not API.IsPlayerAnimating_(player, 3) then
-                        API.RandomSleep2(1500, 6050, 2000)        
-                        if not API.IsPlayerAnimating_(player, 2) then
-                            print("idle so start mining...")
-                            -- Shuffle the ore IDs
-                            runite = shuffle(runite)
-                            -- Mine the first ore in the shuffled list
-                            MineRock(runite[1])
-                            -- Wait until the mining animation ends before proceeding
-                            API.WaitUntilMovingandAnimEnds()
+                    if API.Invfreecount_() > 0 then
+                        print("idle check")
+                        if not API.IsPlayerAnimating_(player, 3) then
+                            API.RandomSleep2(1500, 6050, 2000)        
+                            if not API.IsPlayerAnimating_(player, 2) then
+                                print("idle so start mining...")
+                                runite = shuffle(runite)
+                                MineRock(runite[1])
+                                API.WaitUntilMovingandAnimEnds()
 
-                            -- Check for sparkling rocks while mining is idle
+                                local foundSparkling = API.FindHl(0x3a, 0, runite, 50, { 7165, 7164
+
+ })
+                                if foundSparkling then
+                                    print("Sparkle found")
+                                    MineRock(foundSparkling)
+                                end
+                            end
+                        end
+                    else
+                        print(API.LocalPlayer_HoverProgress())
+                        while API.LocalPlayer_HoverProgress() <= 90 do
+                            print("no stamina..")
+                            print(API.LocalPlayer_HoverProgress())
                             local foundSparkling = API.FindHl(0x3a, 0, runite, 50, { 7165, 7164 })
                             if foundSparkling then
                                 print("Sparkle found")
-                                MineRock(foundSparkling)  -- Mine the sparkling rock
+                                MineRock(foundSparkling)
+                                API.RandomSleep2(2500, 3050, 12000)
+                            else
+                                print("No Sparkle found")
+                                MineRock(runite[1])
+                                API.RandomSleep2(2500, 3050, 12000)
                             end
                         end
                     end
-                else
-                    print(API.LocalPlayer_HoverProgress())
-                    while API.LocalPlayer_HoverProgress() <= 90 do
-                        print("no stamina..")
-                        print(API.LocalPlayer_HoverProgress())
-                        -- Try to find and mine a sparkling rock
-                        local foundSparkling = API.FindHl(0x3a, 0, runite, 50, { 7165, 7164 })
-                        if  foundSparkling then
-                            print("Sparkle found")
-                            MineRock(foundSparkling)  -- Mine the sparkling rock
-                            API.RandomSleep2(2500, 3050, 12000)
-                        else
-                            -- If no sparkling rock was found, mine the first ore in the shuffled list
-                            print("No Sparkle found")
-                            MineRock(runite[1])
-                            API.RandomSleep2(2500, 3050, 12000)
-                        end
+                end
+            elseif currentLevel >= 68 and currentLevel <= 76 then
+                -- Drakolith Mining actions
+                if API.InvFull_() then
+                    if UTILS.getAmountInOrebox(UTILS.ORES.DRAKOLITH) < 120 then
+                        FillOreBox()
+                    else
+                        GETeleport()
+                        GEBanker()
+                        BankItems()
+                        VarrockTeleport()
+                        DrakolithWalk()
+                        AlKharidDungeon()
                     end
-                end
-            end
-        elseif currentLevel >= 68 and currentLevel <= 76 then
-            -- Drakolith Mining actions
-            if API.InvFull_() then
-                if UTILS.getAmountInOrebox(UTILS.ORES.DRAKOLITH) < 120 then
-                    FillOreBox()
                 else
-                    GETeleport()
-                    GEBanker()
-                    BankItems()
-                    VarrockTeleport()
-                    DrakolithWalk()
-                    AlKharidDungeon()
-                end
-            else
-                if API.Invfreecount_() > 0 then
-                    print("idle check")
-                    if not API.IsPlayerAnimating_(player, 3) then
-                        API.RandomSleep2(1500, 6050, 2000)        
-                        if not API.IsPlayerAnimating_(player, 2) then
-                            print("idle so start mining...")
-                            -- Shuffle the ore IDs
-                            drakolith = shuffle(drakolith)
-                            -- Mine the first ore in the shuffled list
-                            MineRock(drakolith[1])
-                            -- Wait until the mining animation ends before proceeding
-                            API.WaitUntilMovingandAnimEnds()
+                    if API.Invfreecount_() > 0 then
+                        print("idle check")
+                        if not API.IsPlayerAnimating_(player, 3) then
+                            API.RandomSleep2(1500, 6050, 2000)        
+                            if not API.IsPlayerAnimating_(player, 2) then
+                                print("idle so start mining...")
+                                drakolith = shuffle(drakolith)
+                                MineRock(drakolith[1])
+                                API.WaitUntilMovingandAnimEnds()
 
-                            -- Check for sparkling rocks while mining is idle
+                                local foundSparkling = API.FindHl(0x3a, 0, drakolith, 50, { 7165, 7164 })
+                                if foundSparkling then
+                                    print("Sparkle found")
+                                    MineRock(foundSparkling)
+                                end
+                            end
+                        end
+                    else
+                        print(API.LocalPlayer_HoverProgress())
+                        while API.LocalPlayer_HoverProgress() <= 90 do
+                            print("no stamina..")
+                            print(API.LocalPlayer_HoverProgress())
                             local foundSparkling = API.FindHl(0x3a, 0, drakolith, 50, { 7165, 7164 })
                             if foundSparkling then
                                 print("Sparkle found")
-                                MineRock(foundSparkling)  -- Mine the sparkling rock
+                                MineRock(foundSparkling)
+                                API.RandomSleep2(2500, 3050, 12000)
+                            else
+                                print("No Sparkle found")
+                                MineRock(drakolith[1])
+                                API.RandomSleep2(2500, 3050, 12000)
                             end
                         end
                     end
-                else
-                    print(API.LocalPlayer_HoverProgress())
-                    while API.LocalPlayer_HoverProgress() <= 90 do
-                        print("no stamina..")
-                        print(API.LocalPlayer_HoverProgress())
-                        -- Try to find and mine a sparkling rock
-                        local foundSparkling = API.FindHl(0x3a, 0, drakolith, 50, { 7165, 7164 })
-                        if  foundSparkling then
-                            print("Sparkle found")
-                            MineRock(foundSparkling)  -- Mine the sparkling rock
-                            API.RandomSleep2(2500, 3050, 12000)
-                        else
-                            -- If no sparkling rock was found, mine the first ore in the shuffled list
-                            print("No Sparkle found")
-                            MineRock(drakolith[1])
-                            API.RandomSleep2(2500, 3050, 12000)
-                        end
+                end
+            elseif currentLevel >= 77 and currentLevel <= 85 then
+                -- Necrite Mining actions
+                if API.InvFull_() then
+                    if UTILS.getAmountInOrebox(UTILS.ORES.NECRITE) < 120 then
+                        FillOreBox()
+                    else
+                        GETeleport()
+                        GEBanker()
+                        BankItems()
+                        VarrockTeleport()
+                        DrakolithWalk()
+                        AlKharidDungeon()
                     end
-                end
-            end
-        elseif currentLevel >= 77 and currentLevel <= 85 then
-            -- Necrite Mining actions
-            if API.InvFull_() then
-                if UTILS.getAmountInOrebox(UTILS.ORES.NECRITE) < 120 then
-                    FillOreBox()
                 else
-                    GETeleport()
-                    GEBanker()
-                    BankItems()
-                    VarrockTeleport()
-                    DrakolithWalk()
-                    AlKharidDungeon()
-                end
-            else
-                if API.Invfreecount_() > 0 then
-                    print("idle check")
-                    if not API.IsPlayerAnimating_(player, 3) then
-                        API.RandomSleep2(1500, 6050, 2000)        
-                        if not API.IsPlayerAnimating_(player, 2) then
-                            print("idle so start mining...")
-                            -- Shuffle the ore IDs
-                            necrite = shuffle(necrite)
-                            -- Mine the first ore in the shuffled list
-                            MineRock(necrite[1])
-                            -- Wait until the mining animation ends before proceeding
-                            API.WaitUntilMovingandAnimEnds()
+                    if API.Invfreecount_() > 0 then
+                        print("idle check")
+                        if not API.IsPlayerAnimating_(player, 3) then
+                            API.RandomSleep2(1500, 6050, 2000)        
+                            if not API.IsPlayerAnimating_(player, 2) then
+                                print("idle so start mining...")
+                                necrite = shuffle(necrite)
+                                MineRock(necrite[1])
+                                API.WaitUntilMovingandAnimEnds()
 
-                            -- Check for sparkling rocks while mining is idle
+                                local foundSparkling = API.FindHl(0x3a, 0, necrite, 50, { 7165, 7164 })
+                                if foundSparkling then
+                                    print("Sparkle found")
+                                    MineRock(foundSparkling)
+                                end
+                            end
+                        end
+                    else
+                        print(API.LocalPlayer_HoverProgress())
+                        while API.LocalPlayer_HoverProgress() <= 90 do
+                            print("no stamina..")
+                            print(API.LocalPlayer_HoverProgress())
                             local foundSparkling = API.FindHl(0x3a, 0, necrite, 50, { 7165, 7164 })
                             if foundSparkling then
                                 print("Sparkle found")
-                                MineRock(foundSparkling)  -- Mine the sparkling rock
+                                MineRock(foundSparkling)
+                                API.RandomSleep2(2500, 3050, 12000)
+                            else
+                                print("No Sparkle found")
+                                MineRock(necrite[1])
+                                API.RandomSleep2(2500, 3050, 12000)
                             end
                         end
                     end
-                else
-                    print(API.LocalPlayer_HoverProgress())
-                    while API.LocalPlayer_HoverProgress() <= 90 do
-                        print("no stamina..")
-                        print(API.LocalPlayer_HoverProgress())
-                        -- Try to find and mine a sparkling rock
-                        local foundSparkling = API.FindHl(0x3a, 0, necrite, 50, { 7165, 7164 })
-                        if  foundSparkling then
-                            print("Sparkle found")
-                            MineRock(foundSparkling)  -- Mine the sparkling rock
-                            API.RandomSleep2(2500, 3050, 12000)
-                        else
-                            -- If no sparkling rock was found, mine the first ore in the shuffled list
-                            print("No Sparkle found")
-                            MineRock(necrite[1])
-                            API.RandomSleep2(2500, 3050, 12000)
-                        end
+                end
+            elseif currentLevel >= 86 and currentLevel <= 95 then
+                -- Banite Mining actions
+                if API.InvFull_() then
+                    if UTILS.getAmountInOrebox(UTILS.ORES.BANITE) < 120 then
+                        FillOreBox()
+                    else
+                        EdgevilleTeleport()
+                        EdgeBank()
+                        BankItems()
+                        EdgeLever()
+                        SlashWeb()
+                        BaniteWalk()
                     end
-                end
-            end
-        elseif currentLevel >= 86 and currentLevel <= 95 then
-            -- Banite Mining actions
-            if API.InvFull_() then
-                if UTILS.getAmountInOrebox(UTILS.ORES.BANITE) < 120 then
-                    FillOreBox()
                 else
-                    EdgevilleTeleport()
-                    EdgeBank()
-                    BankItems()
-                    EdgeLever()
-                    SlashWeb()
-                    BaniteWalk()
-                end
-            else
-                if API.Invfreecount_() > 0 then
-                    print("idle check")
-                    if not API.IsPlayerAnimating_(player, 3) then
-                        API.RandomSleep2(1500, 6050, 2000)        
-                        if not API.IsPlayerAnimating_(player, 2) then
-                            print("idle so start mining...")
-                            -- Shuffle the ore IDs
-                            banite = shuffle(banite)
-                            -- Mine the first ore in the shuffled list
-                            MineRock(banite[1])
-                            -- Wait until the mining animation ends before proceeding
-                            API.WaitUntilMovingandAnimEnds()
+                    if API.Invfreecount_() > 0 then
+                        print("idle check")
+                        if not API.IsPlayerAnimating_(player, 3) then
+                            API.RandomSleep2(1500, 6050, 2000)        
+                            if not API.IsPlayerAnimating_(player, 2) then
+                                print("idle so start mining...")
+                                banite = shuffle(banite)
+                                MineRock(banite[1])
+                                API.WaitUntilMovingandAnimEnds()
 
-                            -- Check for sparkling rocks while mining is idle
+                                local foundSparkling = API.FindHl(0x3a, 0, banite, 50, { 7165, 7164 })
+                                if foundSparkling then
+                                    print("Sparkle found")
+                                    MineRock(foundSparkling)
+                                end
+                            end
+                        end
+                    else
+                        print(API.LocalPlayer_HoverProgress())
+                        while API.LocalPlayer_HoverProgress() <= 90 do
+                            print("no stamina..")
+                            print(API.LocalPlayer_HoverProgress())
                             local foundSparkling = API.FindHl(0x3a, 0, banite, 50, { 7165, 7164 })
                             if foundSparkling then
                                 print("Sparkle found")
-                                MineRock(foundSparkling)  -- Mine the sparkling rock
+                                MineRock(foundSparkling)
+                                API.RandomSleep2(2500, 3050, 12000)
+                            else
+                                print("No Sparkle found")
+                                MineRock(banite[1])
+                                API.RandomSleep2(2500, 3050, 12000)
                             end
-                        end
-                    end
-                else
-                    print(API.LocalPlayer_HoverProgress())
-                    while API.LocalPlayer_HoverProgress() <= 90 do
-                        print("no stamina..")
-                        print(API.LocalPlayer_HoverProgress())
-                        -- Try to find and mine a sparkling rock
-                        local foundSparkling = API.FindHl(0x3a, 0, banite, 50, { 7165, 7164 })
-                        if  foundSparkling then
-                            print("Sparkle found")
-                            MineRock(foundSparkling)  -- Mine the sparkling rock
-                            API.RandomSleep2(2500, 3050, 12000)
-                        else
-                            -- If no sparkling rock was found, mine the first ore in the shuffled list
-                            print("No Sparkle found")
-                            MineRock(banite[1])
-                            API.RandomSleep2(2500, 3050, 12000)
                         end
                     end
                 end
