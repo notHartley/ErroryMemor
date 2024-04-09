@@ -105,6 +105,8 @@ setupGUI()
 -- Variable modules
 local drakolith = {113071, 113072, 113073}  -- IDs of Drakolith ores
 local banite = {113140, 113141, 113142} -- IDs of Banite ores
+local necrite = {113143, 113144, 113145} -- IDs of Necrite ores
+local runite = {113189, 113190} -- IDs of Runite ores
 
 -- Define the function to shuffle a table
 local function shuffle(tbl)
@@ -276,6 +278,36 @@ local function BaniteForge()
     API.RandomSleep2(2500, 3050, 12000)
 end
 
+-- Define the function to teleport to Yanille
+local function YanilleTeleport()
+    API.DoAction_Interface(0xffffffff,0xffffffff,1,1092,26,-1,3808)
+    API.WaitUntilMovingandAnimEnds()
+    API.RandomSleep2(2500, 3050, 12000)
+    API.RandomSleep2(2500, 3050, 12000)
+end
+
+-- Define the function to teleport to Yanille and access the bank
+local function YanilleBanker()
+    API.DoAction_Tile(WPOINT.new(2564,3090,0))
+    API.WaitUntilMovingandAnimEnds()
+    API.RandomSleep2(2500, 3050, 12000)
+    API.DoAction_Tile(WPOINT.new(2609,3093,0))
+    API.WaitUntilMovingandAnimEnds()
+    API.RandomSleep2(2500, 3050, 12000)
+    API.DoAction_Object1(0x5,80,{2213},50)
+    API.WaitUntilMovingandAnimEnds()
+    API.RandomSleep2(2500, 3050, 12000)
+end
+
+-- Define the function to walk to the Runite rocks area
+local function RuniteWalk()
+    API.DoAction_Tile(WPOINT.new(2625,3144,0))
+    API.WaitUntilMovingandAnimEnds()
+    API.RandomSleep2(2500, 3050, 12000)
+end
+
+
+
 -- Main loop environment
 local scriptJustInitiated = true -- Initialize the variable to track script initiation
 API.Write_LoopyLoop(true)
@@ -295,7 +327,12 @@ while(API.Read_LoopyLoop()) do
     if scriptJustInitiated then
         -- Perform initial setup based on mining level
         local currentLevel = API.XPLevelTable(API.GetSkillXP("MINING"))
-        if currentLevel >= 68 and currentLevel <= 76 then
+	if currentLevel >= 56 and currentLevel <= 67 then
+	    YanilleTeleport()
+	    YanilleBanker()
+	    BankItems()
+	    RuniteWalk()
+        elseif currentLevel >= 68 and currentLevel <= 76 then
             GETeleport()
             GEBanker()
             BankItems()
@@ -321,7 +358,62 @@ while(API.Read_LoopyLoop()) do
     else
         -- Perform mining actions based on mining level
         local currentLevel = API.XPLevelTable(API.GetSkillXP("MINING"))
-        if currentLevel >= 68 and currentLevel <= 76 then
+        if currentLevel >= 56 and currentLevel <= 67 then
+            -- Runite Mining actions
+            if API.InvFull_() then
+                if UTILS.getAmountInOrebox(UTILS.ORES.RUNITE) < 120 then
+                    FillOreBox()
+                else
+                    YanilleTeleport()
+                    YanilleBanker()
+                    BankItems()
+                    RuniteWalk()
+                    DrakolithWalk()
+                    AlKharidDungeon()
+                end
+            else
+                if API.Invfreecount_() > 0 then
+                    print("idle check")
+                    if not API.IsPlayerAnimating_(player, 3) then
+                        API.RandomSleep2(1500, 6050, 2000)        
+                        if not API.IsPlayerAnimating_(player, 2) then
+                            print("idle so start mining...")
+                            -- Shuffle the ore IDs
+                            runite = shuffle(runite)
+                            -- Mine the first ore in the shuffled list
+                            MineRock(runite[1])
+                            -- Wait until the mining animation ends before proceeding
+                            API.WaitUntilMovingandAnimEnds()
+
+                            -- Check for sparkling rocks while mining is idle
+                            local foundSparkling = API.FindHl(0x3a, 0, runite, 50, { 7165, 7164 })
+                            if foundSparkling then
+                                print("Sparkle found")
+                                MineRock(foundSparkling)  -- Mine the sparkling rock
+                            end
+                        end
+                    end
+                else
+                    print(API.LocalPlayer_HoverProgress())
+                    while API.LocalPlayer_HoverProgress() <= 90 do
+                        print("no stamina..")
+                        print(API.LocalPlayer_HoverProgress())
+                        -- Try to find and mine a sparkling rock
+                        local foundSparkling = API.FindHl(0x3a, 0, runite, 50, { 7165, 7164 })
+                        if  foundSparkling then
+                            print("Sparkle found")
+                            MineRock(foundSparkling)  -- Mine the sparkling rock
+                            API.RandomSleep2(2500, 3050, 12000)
+                        else
+                            -- If no sparkling rock was found, mine the first ore in the shuffled list
+                            print("No Sparkle found")
+                            MineRock(runite[1])
+                            API.RandomSleep2(2500, 3050, 12000)
+                        end
+                    end
+                end
+            end
+        elseif currentLevel >= 68 and currentLevel <= 76 then
             -- Drakolith Mining actions
             if API.InvFull_() then
                 if UTILS.getAmountInOrebox(UTILS.ORES.DRAKOLITH) < 120 then
