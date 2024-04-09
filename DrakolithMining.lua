@@ -104,6 +104,7 @@ setupGUI()
 
 -- Variable modules
 local drakolith = {113071, 113072, 113073}  -- IDs of Drakolith ores
+local banite = {113140, 113141, 113142} -- IDs of Banite ores
 
 -- Define the function to shuffle a table
 local function shuffle(tbl)
@@ -124,7 +125,7 @@ local function GETeleport()
 end
 
 --Define the function to interact with the banker
-local function Banker()
+local function GEBanker()
     print("Attempting to bank with Banker...")
     API.RandomSleep2(2500, 3050, 12000) -- Add sleep for teleport loading screen
     API.DoAction_NPC(0x5, 1488, {3418}, 50)
@@ -157,7 +158,7 @@ local function VarrockTeleport()
 end
 
 --Define the function to walk closer to the Al Kharid dungeon entrance.
-local function WalkSome()
+local function DrakolithWalk()
     print("Getting closer to mining dungeon...")
     local x1 = 3227 + math.random(-3, 3)
     local y1 = 3354 + math.random(-3, 3)
@@ -179,7 +180,7 @@ local function WalkSome()
 end
 
 --Define the function to enter the Al Kharid dungeon entrance. 
-local function EnterDungeon()
+local function AlKharidDungeon()
     print("Climbing over rocks...")
     API.DoAction_Object1(0xb5,0,{76210},50);
     API.WaitUntilMovingandAnimEnds()
@@ -212,11 +213,80 @@ local function MineRock(rockID)
     API.WaitUntilMovingandAnimEnds()
 end
 
+--Define the function to use Edgeville Lodestone
+local function EdgevilleTeleport()
+    print("Teleporting to Edgeville Lodestone...")
+    API.DoAction_Interface(0x2e,0xffffffff,1,1430,181,-1,3808)
+    API.WaitUntilMovingandAnimEnds()
+    API.RandomSleep2(2500, 3050, 12000)
+    API.RandomSleep2(2500, 3050, 12000)
+    print("Arrived at Edgeville Lodestone...")
+end
+
+--Define the function to walk to the Edgeville Bank and use the Bank Counter
+local function EdgeBank()
+    print("Walking to Edgeville Bank...")
+    API.DoAction_Tile(WPOINT.new(3093,3493,0))
+    API.WaitUntilMovingandAnimEnds()
+    API.RandomSleep2(2500, 3050, 12000)
+    print("Accessing bank counter...")
+    API.DoAction_Object1(0x5,80,{42217},50)
+    API.WaitUntilMovingandAnimEnds()
+    API.RandomSleep2(2500, 3050, 12000)
+    print("Bank has been opened...")
+end
+
+--Define the function to slash the web in the wilderness after using the Edgeville lever
+local function SlashWeb()
+    API.DoAction_Tile(WPOINT.new(3157,3948,0))
+    API.WaitUntilMovingandAnimEnds()
+    API.RandomSleep2(2500, 3050, 12000)
+    API.DoAction_Object1(0x29,0,{65346},50)
+    API.WaitUntilMovingandAnimEnds()
+    API.RandomSleep2(2500, 3050, 12000)
+    API.DoAction_Object1(0x29,0,{65346},50)
+    API.WaitUntilMovingandAnimEnds()
+    API.RandomSleep2(2500, 3050, 12000)
+end
+
+--Define the function to walk from the slashed web to the Banite rocks area
+local function BaniteWalk()
+    API.DoAction_Tile(WPOINT.new(3100,3959,0))
+    API.WaitUntilMovingandAnimEnds()
+    API.RandomSleep2(2500, 3050, 12000)
+    API.WaitUntilMovingandAnimEnds()
+    API.RandomSleep2(2500, 3050, 12000)
+    API.DoAction_Tile(WPOINT.new(3064,3945,0))
+    API.WaitUntilMovingandAnimEnds()
+    API.RandomSleep2(2500, 3050, 12000)
+end
+
+--Define the function to use the Edgeville Lever
+local function EdgeLever()
+    API.DoAction_Object1(0x29,0,{1814},50)
+    API.WaitUntilMovingandAnimEnds()
+    API.RandomSleep2(2500, 3050, 12000)
+    API.RandomSleep2(5000, 3050, 12000) -- Increased minimum sleep time by 2500 milliseconds
+end
+
+--Define the function to use the Forge by the Banite rocks to bank inventory and empty ore box
+local function BaniteForge()
+    API.DoAction_Object1(0x29,80,{113259},50)
+    API.WaitUntilMovingandAnimEnds()
+    API.RandomSleep2(2500, 3050, 12000)
+end
+
 -- Main loop environment
 local scriptJustInitiated = true -- Initialize the variable to track script initiation
 API.Write_LoopyLoop(true)
+local lastGuiUpdateTime = os.time()
 while(API.Read_LoopyLoop()) do
-    drawGUI()
+    -- Update GUI every second
+    if os.time() - lastGuiUpdateTime >= 1 then
+        drawGUI()
+        lastGuiUpdateTime = os.time()
+    end
+    
     idleCheck()
     printProgressReport()
     API.DoRandomEvents()
@@ -225,30 +295,88 @@ while(API.Read_LoopyLoop()) do
     if scriptJustInitiated then
         -- Perform initial setup
         local Cselect = API.ScriptDialogWindow2("Mining", {
-            "Drakolith Mining"
+            "Drakolith Mining",
+            "Banite Mining"  -- Added "Banite Mining" option
         }, "Start", "Close").Name;
 
         if "Drakolith Mining" == Cselect then
             GETeleport()
-            Banker()
+            GEBanker()
             BankItems()
             VarrockTeleport()
-            WalkSome()
-            EnterDungeon()
+            DrakolithWalk()
+            AlKharidDungeon()
             scriptJustInitiated = false  -- Update scriptJustInitiated after the initial setup
+            -- Drakolith Mining actions
+            if API.InvFull_() then
+                if UTILS.getAmountInOrebox(UTILS.ORES.DRAKOLITH) < 120 then
+                    FillOreBox()
+                else
+                    GETeleport()
+                    GEBanker()
+                    BankItems()
+                    VarrockTeleport()
+                    DrakolithWalk()
+                    AlKharidDungeon()
+                end
+            else
+                if API.Invfreecount_() > 0 then
+                    print("idle check")
+                    if not API.IsPlayerAnimating_(player, 3) then
+                        API.RandomSleep2(1500, 6050, 2000)        
+                        if not API.IsPlayerAnimating_(player, 2) then
+                            print("idle so start mining...")
+                            -- Shuffle the ore IDs
+                            drakolith = shuffle(drakolith)
+                            -- Mine the first ore in the shuffled list
+                            MineRock(drakolith[1])
+                            -- Wait until the mining animation ends before proceeding
+                            API.WaitUntilMovingandAnimEnds()
+
+                            -- Check for sparkling rocks while mining is idle
+                            local foundSparkling = API.FindHl(0x3a, 0, drakolith, 50, { 7165, 7164 })
+                            if foundSparkling then
+                                print("Sparkle found")
+                                MineRock(foundSparkling)  -- Mine the sparkling rock
+                            end
+                        end
+                    end
+                else
+                    print(API.LocalPlayer_HoverProgress())
+                    while API.LocalPlayer_HoverProgress() <= 90 do
+                        print("no stamina..")
+                        print(API.LocalPlayer_HoverProgress())
+                        -- Try to find and mine a sparkling rock
+                        local foundSparkling = API.FindHl(0x3a, 0, drakolith, 50, { 7165, 7164 })
+                        if  foundSparkling then
+                            print("Sparkle found")
+                            MineRock(foundSparkling)  -- Mine the sparkling rock
+                            API.RandomSleep2(2500, 3050, 12000)
+                        else
+                            -- If no sparkling rock was found, mine the first ore in the shuffled list
+                            print("No Sparkle found")
+                            MineRock(drakolith[1])
+                            API.RandomSleep2(2500, 3050, 12000)
+                        end
+                    end
+                end
+            end
+        elseif "Banite Mining" == Cselect then  -- Added condition for Banite Mining
+            EdgevilleTeleport()
+            EdgeBank()
+            BankItems()
+            EdgeLever()
+            SlashWeb()
+            BaniteWalk()
+            scriptJustInitiated = false
         end
     else
-        -- Continue with the main routine
+        -- Banite Mining actions
         if API.InvFull_() then
-            if UTILS.getAmountInOrebox(UTILS.ORES.DRAKOLITH) < 120 then
+            if UTILS.getAmountInOrebox(UTILS.ORES.BANITE) < 120 then
                 FillOreBox()
             else
-                GETeleport()
-                Banker()
-                BankItems()
-                VarrockTeleport()
-                WalkSome()
-                EnterDungeon()
+                BaniteForge()
             end
         else
             if API.Invfreecount_() > 0 then
@@ -258,14 +386,14 @@ while(API.Read_LoopyLoop()) do
                     if not API.IsPlayerAnimating_(player, 2) then
                         print("idle so start mining...")
                         -- Shuffle the ore IDs
-                        drakolith = shuffle(drakolith)
+                        banite = shuffle(banite)
                         -- Mine the first ore in the shuffled list
-                        MineRock(drakolith[1])
+                        MineRock(banite[1])
                         -- Wait until the mining animation ends before proceeding
                         API.WaitUntilMovingandAnimEnds()
 
                         -- Check for sparkling rocks while mining is idle
-                        local foundSparkling = API.FindHl(0x3a, 0, drakolith, 50, { 7165, 7164 })
+                        local foundSparkling = API.FindHl(0x3a, 0, banite, 50, { 7165, 7164 })
                         if foundSparkling then
                             print("Sparkle found")
                             MineRock(foundSparkling)  -- Mine the sparkling rock
@@ -278,7 +406,7 @@ while(API.Read_LoopyLoop()) do
                     print("no stamina..")
                     print(API.LocalPlayer_HoverProgress())
                     -- Try to find and mine a sparkling rock
-                    local foundSparkling = API.FindHl(0x3a, 0, drakolith, 50, { 7165, 7164 })
+                    local foundSparkling = API.FindHl(0x3a, 0, banite, 50, { 7165, 7164 })
                     if  foundSparkling then
                         print("Sparkle found")
                         MineRock(foundSparkling)  -- Mine the sparkling rock
@@ -286,7 +414,7 @@ while(API.Read_LoopyLoop()) do
                     else
                         -- If no sparkling rock was found, mine the first ore in the shuffled list
                         print("No Sparkle found")
-                        MineRock(drakolith[1])
+                        MineRock(banite[1])
                         API.RandomSleep2(2500, 3050, 12000)
                     end
                 end
