@@ -72,6 +72,16 @@ local function idleCheck()
     end
 end
 
+--Define a function to calculate level experience information
+local function calcProgressPercentage(skill, currentExp)
+    local currentLevel = API.XPLevelTable(API.GetSkillXP(skill))
+    if currentLevel == 120 then return 100 end
+    local nextLevelExp = XPForLevel(currentLevel + 1)
+    local currentLevelExp = XPForLevel(currentLevel)
+    local progressPercentage = (currentExp - currentLevelExp) / (nextLevelExp - currentLevelExp) * 100
+    return math.floor(progressPercentage)
+end
+
 local function GrandExchange()
     print("Teleporting to Grand Exchange")
     API.WaitUntilMovingandAnimEnds()
@@ -140,7 +150,6 @@ local function Maplewalk()
     API.WaitUntilMovingandAnimEnds()
     API.DoAction_Tile(WPOINT.new(2726,3479,0))
     API.WaitUntilMovingandAnimEnds()
-    API.RandomSleep2(2500, 3050, 12000)
     print("Near some Maple")
 end
 
@@ -151,6 +160,7 @@ local function Loadpreset()
     API.WaitUntilMovingandAnimEnds()
     API.RandomSleep2(2500, 3050, 12000)
     print("Last preset loaded")
+    presetLoaded = true
 end
 
 local function Chop()
@@ -161,17 +171,17 @@ local function Chop()
     local treeID
 
     if currentLevel >= 1 and currentLevel <= 9 then
-        treeID = tree[1]
+        treeID = tree[math.random(#tree)]
     elseif currentLevel >= 10 and currentLevel <= 19 then
-        treeID = oak[1]
+        treeID = oak[math.random(#oak)]
     elseif currentLevel >= 20 and currentLevel <= 39 then
-        treeID = willow[1]
+        treeID = willow[math.random(#willow)]
     elseif currentLevel >= 40 and currentLevel <= 57 then
-        treeID = maple[1]
+        treeID = maple[math.random(#maple)]
     elseif currentLevel >= 58 and currentLevel <= 67 then
-        treeID = eucalyptus[1]
+        treeID = eucalyptus[math.random(#eucalyptus)]
     else
-        treeID = ivy[1]
+        treeID = ivy[math.random(#ivy)]
     end
 
     API.DoAction_Object1(0x3b, 0, {treeID}, 50)
@@ -180,69 +190,86 @@ local function Chop()
     print("Chopped tree")
 end
 
-local function Inventorycheck()
+
+
+local function Bank()
     if API.InvFull_() then
-	print("Inventory full, banking")
+        print("Inventory full, banking")
         GrandExchange()
         Loadpreset()
-	print("Banked, back to it")
+        print("Banked, back to it")
+        
+        if currentTree == "tree" then
+            GrandExchange()
+        elseif currentTree == "oak" then
+            Yanille()
+        elseif currentTree == "willow" then
+            Draynor()
+            Willowwalk()
+        elseif currentTree == "maple" then
+            Seers()
+            Maplewalk()
+        elseif currentTree == "eucalyptus" then
+            Ooglog()
+        elseif currentTree == "ivy" then
+            GrandExchange()
+            ivywalk()
+        end
     end
 end
+
 
 local scriptJustInitiated = true
 local inventoryFull = false
 
 -- Main loop
 API.Write_LoopyLoop(true)
+
+local currentTree = ""
+local previousLevel = 0 -- Initialize previousLevel variable
+
 while(API.Read_LoopyLoop()) do
     idleCheck()
     API.DoRandomEvents()
+    Bank() -- Call the bank function to check if inventory is full
 
-    local currentLevel = API.XPLevelTable(API.GetSkillXP("WOODCUTTING"))
+    local currentXP = API.GetSkillXP("WOODCUTTING")
+    local currentLevel = API.XPLevelTable(currentXP)
 
-    if scriptJustInitiated or inventoryFull then
+    if scriptJustInitiated or presetLoaded then
         if currentLevel >= 1 and currentLevel <= 9 then
+            currentTree = "tree"
             GrandExchange()
-            Chop()
         elseif currentLevel >= 10 and currentLevel <= 19 then
+            currentTree = "oak"
             Yanille()
-            Chop()
         elseif currentLevel >= 20 and currentLevel <= 39 then
-            Seers()
-            Chop()
+            currentTree = "willow"
+            Draynor()
+            Willowwalk()
         elseif currentLevel >= 40 and currentLevel <= 57 then
+            currentTree = "maple"
             Seers()
             Maplewalk()
-            Chop()
         elseif currentLevel >= 58 and currentLevel <= 67 then
+            currentTree = "eucalyptus"
             Ooglog()
-            Chop()
         elseif currentLevel >= 68 then
+            currentTree = "ivy"
             GrandExchange()
             ivywalk()
-            Chop()
         end
         scriptJustInitiated = false
-        if inventoryFull then
-            print("Inventory full flag set to false")
-            inventoryFull = false
-        end
-    else
-        Chop()
+	presetLoaded = false
     end
 
-    Inventorycheck() -- Check inventory after each action
-
-    if API.InvFull_() then
-        if not inventoryFull then
-            print("Inventory full flag set to true")
-            inventoryFull = true
-        end
-    else
-        if inventoryFull then
-            print("Inventory full flag set to false")
-            inventoryFull = false
-        end
+    if currentLevel ~= previousLevel or not scriptJustInitiated then
+        local nextLevel = currentLevel + 1
+        local xpNeeded = API.XPForLevel(nextLevel) - currentXP
+        print("Your current level is " .. currentLevel .. ", so actively cutting " .. currentTree .. " logs.")
+        print("You are " .. xpNeeded .. " experience away from level " .. nextLevel .. ".")
+        previousLevel = currentLevel -- Update previousLevel
     end
+
+    Chop()
 end
-
