@@ -185,6 +185,22 @@ local function waitForPlayerMovement(targetCoords)
     return true
 end
 
+-- Function to print progress report
+local function printProgressReport()
+    local skill = "AGILITY"
+    local currentXp = API.GetSkillXP(skill)
+    local elapsedMinutes = (os.time() - startTime) / 60
+    local diffXp = math.abs(currentXp - startXp)
+    local xpPH = round((diffXp * 60) / elapsedMinutes)
+    local time = formatElapsedTime(startTime)
+    local currentLevel = API.XPLevelTable(API.GetSkillXP(skill))
+    IGP.radius = calcProgressPercentage(skill, API.GetSkillXP(skill)) / 100
+    IGP.string_value = time ..
+            " | " ..
+            string.lower(skill):gsub("^%l", string.upper) ..
+            ": " .. currentLevel .. " | XP/H: " .. formatNumber(xpPH) .. " | XP: " .. formatNumber(diffXp)
+end
+
 while API.Read_LoopyLoop() do
     idleCheck()
     API.DoRandomEvents()
@@ -201,6 +217,7 @@ while API.Read_LoopyLoop() do
         
         if waitForPlayerMovement(targetCoords) then
             print("Player reached target coordinates.")
+            printProgressReport() -- Print progress report after each action
             currentIndex = currentIndex % #actions + 1 -- Move to the next action
         else
             print("Waiting for player movement timed out. Repeating the current action.")
