@@ -155,7 +155,7 @@ local actions = {
     {BalancingRope, "Walking on balancing rope", 6000}, -- Delay for BalancingRope
     {TreeBranch2, "Balancing on tree branch 2", 2250}, -- Delay for TreeBranch2
     {ObstacleNet2, "Climbing obstacle net 2", 5300}, -- Delay for ObstacleNet2
-    {ObstaclePipe, "Crawling through obstacle pipe", 5300} -- Delay for ObstaclePipe
+    {ObstaclePipe, "Crawling through obstacle pipe", 5800} -- Delay for ObstaclePipe
 }
 local currentIndex = 1
 
