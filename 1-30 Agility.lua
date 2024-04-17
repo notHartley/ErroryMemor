@@ -151,7 +151,7 @@ API.Write_LoopyLoop(true)
 local actions = {
     {WalkLog, "Walking on log", 7500}, -- Delay for WalkLog
     {ObstacleNet1, "Climbing obstacle net 1", 2600}, -- Delay for ObstacleNet1
-    {TreeBranch1, "Balancing on tree branch 1", 1000}, -- Delay for TreeBranch1
+    {TreeBranch1, "Balancing on tree branch 1", 1500}, -- Delay for TreeBranch1
     {BalancingRope, "Walking on balancing rope", 6000}, -- Delay for BalancingRope
     {TreeBranch2, "Balancing on tree branch 2", 2250}, -- Delay for TreeBranch2
     {ObstacleNet2, "Climbing obstacle net 2", 5300}, -- Delay for ObstacleNet2
