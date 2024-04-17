@@ -1,6 +1,7 @@
 -- Import required modules
 local API = require("api")
 local UTILS = require("utils")
+local player = API.GetLocalPlayerName()
 
 -- Internal required modules
 local startTime = os.time()
@@ -80,7 +81,7 @@ local function waitForPlayerMovement(targetCoords)
         API.DoRandomEvents()
         drawGUI()
         local currentTime = os.time()
-        if currentTime - startTime >= 15 then -- Adjust timeout as needed (in seconds)
+        if currentTime - startTime >= 10 then -- Adjust timeout as needed (in seconds)
             print("Timeout reached while waiting for player movement.")
             return false
         end
@@ -173,40 +174,88 @@ API.CheckAnim()
 API.WaitUntilMovingandAnimEnds()
 end
 
+-- Function to wait until the player has stopped moving and is not interacting with any objects
+local function waitForPlayerReady()
+    local startTime = os.time()
+    while API.ReadPlayerMovin() or API.PlayerInterActing_() do
+        idleCheck()
+        API.DoRandomEvents()
+        drawGUI()
+        local currentTime = os.time()
+        if currentTime - startTime >= 10 then -- Timeout after 10 seconds
+            print("Timeout reached while waiting for player to be ready.")
+            return false
+        end
+        API.RandomSleep2(1000, 1500, 2000) -- Adjust sleep duration as needed
+    end
+    return true
+end
+
 -- Main Loop
 API.Write_LoopyLoop(true)
 local actions = {
-    {WalkLog, "Walking on log", {2474, 3429}}, -- Coordinates after WalkLog
-    {ObstacleNet1, "Climbing obstacle net 1", {2473, 3423}}, -- Coordinates after ObstacleNet1
-    {TreeBranch1, "Balancing on tree branch 1", {2473, 3420}}, -- Coordinates after TreeBranch1
-    {BalancingRope, "Walking on balancing rope", {2483, 3420}}, -- Coordinates after BalancingRope
-    {TreeBranch2, "Balancing on tree branch 2", {2487, 3417}}, -- Coordinates after TreeBranch2
-    {ObstacleNet2, "Climbing obstacle net 2", {2487, 3427}}, -- Coordinates after ObstacleNet2
-    {ObstaclePipe, "Crawling through obstacle pipe", {2483, 3437}} -- Coordinates after ObstaclePipe
+    {WalkLog, "Walking on log", {2483, 3437}},
+    {ObstacleNet1, "Climbing obstacle net 1", {2474, 3429}},
+    {TreeBranch1, "Balancing on tree branch 1", {2473, 3423}},
+    {BalancingRope, "Walking on balancing rope", {2473, 3420}},
+    {TreeBranch2, "Balancing on tree branch 2", {2483, 3420}},
+    {ObstacleNet2, "Climbing obstacle net 2", {2487, 3417}},
+    {ObstaclePipe, "Crawling through obstacle pipe", {2487, 3427}}
 }
 local currentIndex = 1
+local previousActionIndex = nil
+local retryCount = 0
+
+-- Function to check if the player is not busy
+local function isPlayerNotBusy()
+    return not API.PlayerInterActing_(API.Local_PlayerInterActingWith_())
+end
+-- Function to wait until the player has stopped moving and is not interacting with any objects
+local function waitForPlayerReady()
+    local startTime = os.time()
+    while API.ReadPlayerMovin() or API.PlayerInterActing_() do
+        idleCheck()
+        API.DoRandomEvents()
+        drawGUI()
+        local currentTime = os.time()
+        if currentTime - startTime >= 10 then -- Timeout after 10 seconds
+            print("Timeout reached while waiting for player to be ready.")
+            return false
+        end
+        API.RandomSleep2(1000, 1500, 2000) -- Adjust sleep duration as needed
+    end
+    return true
+end
 
 while API.Read_LoopyLoop() do
     idleCheck()
     API.DoRandomEvents()
     drawGUI()
     printProgressReport()
-    
+
     local currentAction = actions[currentIndex]
     if currentAction then
         local actionFunction = currentAction[1]
         local actionName = currentAction[2]
         local targetCoords = currentAction[3] -- Target coordinates for the action
         
-        print("Starting action:", actionName)
-        actionFunction() -- Perform the action
-        
-        if waitForPlayerMovement(targetCoords) then
-            print("Player reached target coordinates.")
-            printProgressReport() -- Print progress report after each action
-            currentIndex = currentIndex % #actions + 1 -- Move to the next action
+        if checkPlayerCoordinates(targetCoords) then
+            if isPlayerNotBusy() then
+                print("Starting action:", actionName)
+                actionFunction() -- Perform the action
+                
+                print("Player reached target coordinates.")
+                previousActionIndex = currentIndex
+                currentIndex = currentIndex % #actions + 1 -- Move to the next action
+                retryCount = 0
+            else
+                print("Player is busy. Waiting...")
+                API.RandomSleep2(1000, 1500, 2000) -- Wait and try again
+            end
         else
-            print("Waiting for player movement timed out. Repeating the current action.")
+            print("Player not at target coordinates for:", actionName)
+            -- If the player is not at the target coordinates, wait and try again
+            API.RandomSleep2(1000, 1500, 2000) -- Adjust sleep duration as needed
         end
     else
         -- All actions completed, reset to the first one
