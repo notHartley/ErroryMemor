@@ -63,6 +63,32 @@ local function idleCheck()
     end
 end
 
+-- Function to check if the player is at the specified coordinates
+local function checkPlayerCoordinates(targetCoords)
+    local playerPos = API.PlayerCoordfloat()
+    local playerX, playerY = math.floor(playerPos.x), math.floor(playerPos.y)
+    print("Player coordinates:", playerX, playerY)
+    print("Target coordinates:", targetCoords[1], targetCoords[2])
+    return playerX == targetCoords[1] and playerY == targetCoords[2]
+end
+
+-- Function to wait until the player reaches the target coordinates or a timeout occurs
+local function waitForPlayerMovement(targetCoords)
+    local startTime = os.time()
+    while not checkPlayerCoordinates(targetCoords) do
+        idleCheck()
+        API.DoRandomEvents()
+        drawGUI()
+        local currentTime = os.time()
+        if currentTime - startTime >= 15 then -- Adjust timeout as needed (in seconds)
+            print("Timeout reached while waiting for player movement.")
+            return false
+        end
+        API.RandomSleep2(1000, 1500, 2000) -- Adjust sleep duration as needed
+    end
+    return true
+end
+
 -- Add GUI related functions
 local function calcProgressPercentage(skill, currentExp)
     local currentLevel = API.XPLevelTable(API.GetSkillXP(skill))
@@ -73,15 +99,16 @@ local function calcProgressPercentage(skill, currentExp)
     return math.floor(progressPercentage)
 end
 
-local function printProgressReport(final)
+-- Function to print progress report
+local function printProgressReport()
     local skill = "AGILITY"
     local currentXp = API.GetSkillXP(skill)
     local elapsedMinutes = (os.time() - startTime) / 60
     local diffXp = math.abs(currentXp - startXp)
     local xpPH = round((diffXp * 60) / elapsedMinutes)
     local time = formatElapsedTime(startTime)
-    local currentLevel = API.XPLevelTable(API.GetSkillXP(skill))
-    IGP.radius = calcProgressPercentage(skill, API.GetSkillXP(skill)) / 100
+    local currentLevel = API.XPLevelTable(currentXp)
+    IGP.radius = calcProgressPercentage(skill, currentXp) / 100
     IGP.string_value = time ..
             " | " ..
             string.lower(skill):gsub("^%l", string.upper) ..
@@ -159,52 +186,11 @@ local actions = {
 }
 local currentIndex = 1
 
--- Function to check if the player is at the specified coordinates
-local function checkPlayerCoordinates(targetCoords)
-    local playerPos = API.PlayerCoordfloat()
-    local playerX, playerY = math.floor(playerPos.x), math.floor(playerPos.y)
-    print("Player coordinates:", playerX, playerY)
-    print("Target coordinates:", targetCoords[1], targetCoords[2])
-    return playerX == targetCoords[1] and playerY == targetCoords[2]
-end
-
--- Function to wait until the player reaches the target coordinates or a timeout occurs
-local function waitForPlayerMovement(targetCoords)
-    local startTime = os.time()
-    while not checkPlayerCoordinates(targetCoords) do
-        idleCheck()
-        API.DoRandomEvents()
-        drawGUI()
-        local currentTime = os.time()
-        if currentTime - startTime >= 10 then -- Adjust timeout as needed (in seconds)
-            print("Timeout reached while waiting for player movement.")
-            return false
-        end
-        API.RandomSleep2(1000, 1500, 2000) -- Adjust sleep duration as needed
-    end
-    return true
-end
-
--- Function to print progress report
-local function printProgressReport()
-    local skill = "AGILITY"
-    local currentXp = API.GetSkillXP(skill)
-    local elapsedMinutes = (os.time() - startTime) / 60
-    local diffXp = math.abs(currentXp - startXp)
-    local xpPH = round((diffXp * 60) / elapsedMinutes)
-    local time = formatElapsedTime(startTime)
-    local currentLevel = API.XPLevelTable(API.GetSkillXP(skill))
-    IGP.radius = calcProgressPercentage(skill, API.GetSkillXP(skill)) / 100
-    IGP.string_value = time ..
-            " | " ..
-            string.lower(skill):gsub("^%l", string.upper) ..
-            ": " .. currentLevel .. " | XP/H: " .. formatNumber(xpPH) .. " | XP: " .. formatNumber(diffXp)
-end
-
 while API.Read_LoopyLoop() do
     idleCheck()
     API.DoRandomEvents()
     drawGUI()
+    printProgressReport()
     
     local currentAction = actions[currentIndex]
     if currentAction then
