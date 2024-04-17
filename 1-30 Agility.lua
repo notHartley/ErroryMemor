@@ -68,8 +68,6 @@ end
 local function checkPlayerCoordinates(targetCoords)
     local playerPos = API.PlayerCoordfloat()
     local playerX, playerY = math.floor(playerPos.x), math.floor(playerPos.y)
-    print("Player coordinates:", playerX, playerY)
-    print("Target coordinates:", targetCoords[1], targetCoords[2])
     return playerX == targetCoords[1] and playerY == targetCoords[2]
 end
 
@@ -232,12 +230,11 @@ while API.Read_LoopyLoop() do
     API.DoRandomEvents()
     drawGUI()
     printProgressReport()
-
-    local currentAction = actions[currentIndex]
-    if currentAction then
-        local actionFunction = currentAction[1]
-        local actionName = currentAction[2]
-        local targetCoords = currentAction[3] -- Target coordinates for the action
+    
+    for _, actionData in ipairs(actions) do
+        local actionFunction = actionData[1]
+        local actionName = actionData[2]
+        local targetCoords = actionData[3]
         
         if checkPlayerCoordinates(targetCoords) then
             if isPlayerNotBusy() then
@@ -245,21 +242,13 @@ while API.Read_LoopyLoop() do
                 actionFunction() -- Perform the action
                 
                 print("Player reached target coordinates.")
-                previousActionIndex = currentIndex
-                currentIndex = currentIndex % #actions + 1 -- Move to the next action
-                retryCount = 0
+                break -- Exit the loop and wait for the next iteration
             else
                 print("Player is busy. Waiting...")
                 API.RandomSleep2(1000, 1500, 2000) -- Wait and try again
             end
         else
             print("Player not at target coordinates for:", actionName)
-            -- If the player is not at the target coordinates, wait and try again
-            API.RandomSleep2(1000, 1500, 2000) -- Adjust sleep duration as needed
         end
-    else
-        -- All actions completed, reset to the first one
-        currentIndex = 1
-        print("All actions completed. Resetting to the first action.")
     end
 end
