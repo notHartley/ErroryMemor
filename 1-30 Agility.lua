@@ -149,37 +149,40 @@ end
 -- Main Loop
 API.Write_LoopyLoop(true)
 local actions = {
-    {WalkLog, "Walking on log", 7500}, -- Delay for WalkLog
-    {ObstacleNet1, "Climbing obstacle net 1", 2600}, -- Delay for ObstacleNet1
-    {TreeBranch1, "Balancing on tree branch 1", 1500}, -- Delay for TreeBranch1
-    {BalancingRope, "Walking on balancing rope", 6000}, -- Delay for BalancingRope
-    {TreeBranch2, "Balancing on tree branch 2", 2250}, -- Delay for TreeBranch2
-    {ObstacleNet2, "Climbing obstacle net 2", 5300}, -- Delay for ObstacleNet2
-    {ObstaclePipe, "Crawling through obstacle pipe", 5800} -- Delay for ObstaclePipe
+    {WalkLog, "Walking on log", {2474, 3429}}, -- Coordinates after WalkLog
+    {ObstacleNet1, "Climbing obstacle net 1", {2473, 3423}}, -- Coordinates after ObstacleNet1
+    {TreeBranch1, "Balancing on tree branch 1", {2473, 3420}}, -- Coordinates after TreeBranch1
+    {BalancingRope, "Walking on balancing rope", {2483, 3420}}, -- Coordinates after BalancingRope
+    {TreeBranch2, "Balancing on tree branch 2", {2487, 3417}}, -- Coordinates after TreeBranch2
+    {ObstacleNet2, "Climbing obstacle net 2", {2487, 3427}}, -- Coordinates after ObstacleNet2
+    {ObstaclePipe, "Crawling through obstacle pipe", {2483, 3437}} -- Coordinates after ObstaclePipe
 }
 local currentIndex = 1
 
--- Function to wait until animation completion with a timeout
-local function waitForAnimationCompletion(timeout)
+-- Function to check if the player is at the specified coordinates
+local function checkPlayerCoordinates(targetCoords)
+    local playerPos = API.PlayerCoordfloat()
+    local playerX, playerY = math.floor(playerPos.x), math.floor(playerPos.y)
+    print("Player coordinates:", playerX, playerY)
+    print("Target coordinates:", targetCoords[1], targetCoords[2])
+    return playerX == targetCoords[1] and playerY == targetCoords[2]
+end
+
+-- Function to wait until the player reaches the target coordinates or a timeout occurs
+local function waitForPlayerMovement(targetCoords)
     local startTime = os.time()
-    while API.IsPlayerAnimating_(0, 0) do
+    while not checkPlayerCoordinates(targetCoords) do
         idleCheck()
         API.DoRandomEvents()
         drawGUI()
-        local elapsedTime = os.time() - startTime
-        if elapsedTime >= timeout then
-            print("Timeout reached while waiting for animation completion.")
-            break
+        local currentTime = os.time()
+        if currentTime - startTime >= 10 then -- Adjust timeout as needed (in seconds)
+            print("Timeout reached while waiting for player movement.")
+            return false
         end
-        API.RandomSleep2(500, 1000, 1500) -- Adjust sleep duration as needed
+        API.RandomSleep2(1000, 1500, 2000) -- Adjust sleep duration as needed
     end
-end
-
--- Function to wait until both animation and action completion
-local function waitForActionCompletion(actionFunc, delay)
-    waitForAnimationCompletion(10) -- Maximum wait time for animation completion (in seconds)
-    actionFunc() -- Execute the action function after animation completes
-    API.RandomSleep2(delay, delay + 500, delay + 1000) -- Additional delay after action completion
+    return true
 end
 
 while API.Read_LoopyLoop() do
@@ -191,16 +194,20 @@ while API.Read_LoopyLoop() do
     if currentAction then
         local actionFunction = currentAction[1]
         local actionName = currentAction[2]
-        local delay = currentAction[3] or 3000 -- Default delay if not specified
-        print("Performing action: " .. actionName)
-        waitForActionCompletion(actionFunction, delay)
+        local targetCoords = currentAction[3] -- Target coordinates for the action
         
-        -- Update progress report
-        printProgressReport()
+        print("Starting action:", actionName)
+        actionFunction() -- Perform the action
         
-        currentIndex = currentIndex % #actions + 1
+        if waitForPlayerMovement(targetCoords) then
+            print("Player reached target coordinates.")
+            currentIndex = currentIndex % #actions + 1 -- Move to the next action
+        else
+            print("Waiting for player movement timed out. Repeating the current action.")
+        end
     else
         -- All actions completed, reset to the first one
         currentIndex = 1
+        print("All actions completed. Resetting to the first action.")
     end
 end
