@@ -165,10 +165,58 @@ API.CheckAnim()
 API.WaitUntilMovingandAnimEnds()
 end
 
+local function ruinedTemple3()
+API.DoAction_Object1(0xb5,0,{113732},50)
+API.CheckAnim()
+API.WaitUntilMovingandAnimEnds()
+end
+
+local function ruinedTemple4()
+API.DoAction_Object1(0xb5,0,{113731},50)
+API.CheckAnim()
+API.WaitUntilMovingandAnimEnds()
+end
+
+local function ruinedTemple5()
+API.DoAction_Object1(0xb5,0,{113730},50)
+API.CheckAnim()
+API.WaitUntilMovingandAnimEnds()
+end
+
+local function ruinedTemple6()
+API.DoAction_Object1(0xb5,0,{113729},50)
+API.CheckAnim()
+API.WaitUntilMovingandAnimEnds()
+end
+
+local function ruinedTemple7()
+API.DoAction_Object1(0xb5,0,{113728},50)
+API.CheckAnim()
+API.WaitUntilMovingandAnimEnds()
+end
+
+local function traverseBones1()
+API.DoAction_Object1(0xb5,0,{113727},50)
+API.CheckAnim()
+API.WaitUntilMovingandAnimEnds()
+end
+
+local function crossSpine()
+API.DoAction_Object1(0xb5,0,{113726},50)
+API.CheckAnim()
+API.WaitUntilMovingandAnimEnds()
+end
+
+local function traverseBones2()
+API.DoAction_Object1(0xb5,0,{113725},50)
+API.CheckAnim()
+API.WaitUntilMovingandAnimEnds()
+end
 
 -- Main Loop
 API.Write_LoopyLoop(true)
-local actions = {
+
+local beginner = {
     {cliffFace1, "Traversing the cliff", {5428, 2383}}, -- If player is at 5428,2383, then cliffFace1()
     {cliffFace2, "Traversing the cliff", {5428, 2386}}, -- If player is at 5428,2386, then cliffFace2()
     {ruinedTemple1, "Crossing the temple", {5426, 2390}}, -- If player is at 2474, 3429, then ruinedTemple1() 
@@ -182,28 +230,53 @@ local actions = {
     {cliffFace2, "Traversing the cliff", {5425, 2397}}, -- If player is at 5425, 2397, then cliffFace2()
     {cliffFace1, "Traversing the cliff", {5426, 2387}}, -- If player is at 5436, 2387, then cliffFace1()
 }
-local currentIndex = 1
-local previousActionIndex = nil
-local retryCount = 0
 
--- Function to check if the player is not busy
-local function isPlayerNotBusy()
-    return not API.PlayerInterActing_(API.Local_PlayerInterActingWith_())
+local novice = {
+    {cliffFace1, "Traversing the cliff", {5428, 2383}}, -- If player is at 5428,2383, then cliffFace1()
+    {cliffFace2, "Traversing the cliff", {5428, 2386}}, -- If player is at 5428,2386, then cliffFace2()
+    {ruinedTemple1, "Crossing the temple", {5426, 2390}}, -- If player is at 2474, 3429, then ruinedTemple1() 
+    {ruinedTemple2, "Crossing the temple", {5425, 2403}}, -- If player is at 2473, 3423, then ruinedTemple2() 
+    {caveEntrance, "Crawling through the cave", {5431, 2413}}, -- If player is at 2473, 3420, then caveEntrance()
+    {crossRoots, "Crossing the roots", {5482, 2456}}, -- If player is at 2483, 3420, then crossRoots()
+    {ruinedTemple3, "Crossing the temple", {5491, 2456}}, -- If player is at 5491,2456, then ruinedTemple3()
+    {ruinedTemple4, "Crossing the temple", {5505, 2466}}, -- If player is at 5505,2466, then ruinedTemple4() 
+    {ruinedTemple5, "Crossing the temple", {5505, 2476}}, -- If player is at 5505,2476, then ruinedTemple5() 
+    {ruinedTemple6, "Crossing the temple", {5505, 2481}}, -- If player is at 5505,2481, then ruinedTemple6() 
+    {ruinedTemple7, "Crossing the temple", {5532, 2492}}, -- If player is at 5532,2492, then ruinedTemple7()
+    {traverseBones1, "Traversing the bones", {5544, 2492}}, -- If player is at 5544,2492, then traverseBones1()
+    {crossSpine, "Crossing the spine", {5571, 2452}}, -- If player is at 5571,2452, then crossSpine()
+    {traverseBones2, "Traversing the bones", {5581, 2453}}, -- If player is at 5581,2453, then traverseBones2()
+    {traverseBones2, "Traversing the bones", {5591, 2452}}, -- If player is at 5591,2452, then traverseBones2()
+    {crossSpine, "Crossing the spine", {5584, 2452}}, -- If player is at 5584,2452, then crossSpine()
+    {traverseBones1, "Traversing the bones", {5574, 2453}}, -- If player is at 5574,2453, then traverseBones1()
+    {ruinedTemple7, "Crossing the temple", {5564, 2452}}, -- If player is at 5564,2452, then ruinedTemple7()
+    {ruinedTemple6, "Crossing the temple", {5536, 2492}}, -- If player is at 5536,2492, then ruinedTemple6()
+    {ruinedTemple5, "Crossing the temple", {5528, 2492}}, -- If player is at 5528,2492, then ruinedTemple5()
+    {ruinedTemple4, "Crossing the temple", {5505, 2478}}, -- If player is at 5505,2478, then ruinedTemple4()
+    {ruinedTemple3, "Crossing the temple", {5505, 2468}}, -- If player is at 5505,2468, then ruinedTemple3()
+    {crossRoots, "Crossing the roots", {5505, 2462}}, -- If player is at 5505,2462, then crossRoots()
+    {caveEntrance, "Crawling through the cave", {5484, 2456}}, -- If player is at 2487, 3427, then caveEntrance()
+    {ruinedTemple2, "Crossing the temple", {5431, 2417}}, -- If player is at 5431, 2417, then ruinedTemple2()
+    {ruinedTemple1, "Crossing the temple", {5431, 2407}}, -- If player is at 5431, 2407, then ruinedTemple1()
+    {cliffFace2, "Traversing the cliff", {5425, 2397}}, -- If player is at 5425, 2397, then cliffFace2()
+    {cliffFace1, "Traversing the cliff", {5426, 2387}} -- If player is at 5436, 2387, then cliffFace1()
+}
+
+local currentLevel = API.XPLevelTable(API.GetSkillXP("AGILITY"))
+
+local actions = beginner
+if currentLevel >= 50 and currentLevel <= 69 then
+    actions = novice
 end
--- Function to wait until the player has stopped moving and is not interacting with any objects
-local function waitForPlayerReady()
-    local startTime = os.time()
-    while API.ReadPlayerMovin() or API.PlayerInterActing_() do
-        idleCheck()
-        API.DoRandomEvents()
-        drawGUI()
-        local currentTime = os.time()
-        if currentTime - startTime >= 10 then -- Timeout after 10 seconds
-            print("Timeout reached while waiting for player to be ready.")
-            return false
-        end
-    end
-    return true
+
+local function executeAction(actionData)
+    local actionFunction = actionData[1]
+    local actionName = actionData[2]
+    local targetCoords = actionData[3]
+    
+    print("Starting action:", actionName)
+    actionFunction() -- Perform the action
+    print("Player reached target coordinates.")
 end
 
 while API.Read_LoopyLoop() do
@@ -216,21 +289,10 @@ while API.Read_LoopyLoop() do
     local playerX, playerY = math.floor(playerPos.x), math.floor(playerPos.y)
     
     for _, actionData in ipairs(actions) do
-        local actionFunction = actionData[1]
-        local actionName = actionData[2]
         local targetCoords = actionData[3]
-        
-        print("Player position:", playerX, playerY)
-        print("Target coordinates:", targetCoords[1], targetCoords[2])
-        
         if playerX == targetCoords[1] and playerY == targetCoords[2] then
-            print("Starting action:", actionName)
-            actionFunction() -- Perform the action
-            
-            print("Player reached target coordinates.")
-            break -- Exit the loop and wait for the next iteration
-        else
-            print("Player not at target coordinates for:", actionName)
+            executeAction(actionData)
+            break
         end
     end
     
