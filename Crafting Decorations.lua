@@ -1,5 +1,6 @@
 -- Crafting Decorations by notHartley v1.0 12/03/2024
 local API = require("api")
+API.SetMaxIdleTime(5)
 
 -- IDs
 local unfinishedCrate = 128787
